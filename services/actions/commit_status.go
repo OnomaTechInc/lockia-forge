@@ -180,7 +180,7 @@ func getAllRequiredStatusContextGlobs(ctx context.Context, repo *repo_model.Repo
 
 // CreateSkippedCommitStatusForFilteredWorkflow posts a skipped commit status for each job of a
 // workflow that matched the triggering event but was excluded by a branch/paths filter.
-// This lets a required status check tied to that context be satisfied without the workflow running.
+// This records why a required context did not run; required-check aggregation treats it as unmet.
 // Only contexts matching requiredGlobs are posted; a non-required context gets no skipped status.
 // No ActionRun is created, so the status has no target URL (there is no run/job to link to).
 // A non-empty scopedPrefix prefixes each context with its source repo, matching scoped runs.
