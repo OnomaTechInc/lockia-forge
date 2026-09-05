@@ -344,9 +344,9 @@ jobs:
 			})
 		})
 
-		t.Run("Filtered required scoped check passes as skipped and allows merge", func(t *testing.T) {
-			// A required scoped workflow excluded by a paths filter posts a skipped (success) commit status,
-			// so the required check is satisfied and the PR can merge.
+		t.Run("Filtered required scoped check remains unmet and blocks merge", func(t *testing.T) {
+			// A required scoped workflow excluded by a paths filter posts a skipped commit status,
+			// which remains unmet because the workflow did not run.
 
 			const scopedFilteredPRWorkflow = `name: Scoped Filtered PR
 on:
@@ -390,11 +390,11 @@ jobs:
 			assert.Equal(t, 0, unittest.GetCount(t, &actions_model.ActionRun{RepoID: consumer.ID, IsScopedRun: true}), "filtered scoped workflow creates no run")
 			assertSkippedCommitStatusExists(t, consumer.ID, pr.Head.Sha, "pull_request")
 
-			// The skipped (success) status satisfies the required scoped check (prefixed with the source repo), so the merge is allowed.
+			// The skipped status does not satisfy the required scoped check, so the merge remains blocked.
 			assert.NoError(t, queue.GetManager().FlushAll(t.Context(), 5*time.Second))
 			mergeReq := NewRequestWithJSON(t, "POST", fmt.Sprintf("/api/v1/repos/%s/%s/pulls/%d/merge", consumer.OwnerName, consumer.Name, pr.Index),
 				&forms.MergePullRequestForm{Do: string(repo_model.MergeStyleMerge), MergeMessageField: "merge"}).AddTokenAuth(user2Token)
-			user2Session.MakeRequest(t, mergeReq, http.StatusOK)
+			user2Session.MakeRequest(t, mergeReq, http.StatusMethodNotAllowed)
 		})
 
 		t.Run("Settings page required patterns", func(t *testing.T) {

@@ -34,11 +34,15 @@ func MergeRequiredContextsCommitStatus(commitStatuses []*git_model.CommitStatus,
 
 	requiredContextsGlob := make(map[string]glob.Glob, len(requiredContexts))
 	for _, ctx := range requiredContexts {
-		if gp, err := glob.Compile(ctx); err != nil {
+		gp, err := glob.Compile(ctx)
+		if err != nil {
 			log.Error("glob.Compile %s failed. Error: %v", ctx, err)
-		} else {
-			requiredContextsGlob[ctx] = gp
+			gp, err = glob.Compile(glob.QuoteMeta(ctx))
+			if err != nil {
+				return commitstatus.CommitStatusPending
+			}
 		}
+		requiredContextsGlob[ctx] = gp
 	}
 
 	requiredCommitStatuses := make([]*git_model.CommitStatus, 0, len(commitStatuses))
@@ -58,15 +62,19 @@ func MergeRequiredContextsCommitStatus(commitStatuses []*git_model.CommitStatus,
 	}
 
 	returnedStatus := git_model.CalcCommitStatus(requiredCommitStatuses).State
-	if allRequiredContextsMatched {
-		return returnedStatus
-	}
-
 	if returnedStatus == commitstatus.CommitStatusFailure {
 		return commitstatus.CommitStatusFailure
 	}
-	// even if part of success, return pending
-	return commitstatus.CommitStatusPending
+	if !allRequiredContextsMatched {
+		// even if part of success, return pending
+		return commitstatus.CommitStatusPending
+	}
+	for _, status := range requiredCommitStatuses {
+		if status.State.IsSkipped() {
+			return commitstatus.CommitStatusPending
+		}
+	}
+	return returnedStatus
 }
 
 // IsPullCommitStatusPass returns if all required status checks PASS

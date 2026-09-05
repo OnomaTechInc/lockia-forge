@@ -79,7 +79,7 @@ func TestAggregateJobStatus(t *testing.T) {
 		{[]Status{StatusFailure, StatusBlocked}, StatusBlocked},
 
 		// skipped with other status
-		// "all skipped" is also considered as "mergeable" by "services/actions.toCommitStatus", the same as GitHub
+		// required-context merge gating separately treats skipped as unmet
 		{[]Status{StatusSkipped}, StatusSkipped},
 		{[]Status{StatusSkipped, StatusSuccess}, StatusSuccess},
 		{[]Status{StatusSkipped, StatusFailure}, StatusFailure},

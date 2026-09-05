@@ -34,7 +34,7 @@ func TestMergeRequiredContextsCommitStatus(t *testing.T) {
 				{Context: "Build xxx", State: commitstatus.CommitStatusSkipped},
 			},
 			requiredContexts: []string{"Build*"},
-			expected:         commitstatus.CommitStatusSuccess,
+			expected:         commitstatus.CommitStatusPending,
 		},
 		{
 			commitStatuses: []*git_model.CommitStatus{
@@ -43,6 +43,38 @@ func TestMergeRequiredContextsCommitStatus(t *testing.T) {
 				{Context: "Build 3", State: commitstatus.CommitStatusSuccess},
 			},
 			requiredContexts: []string{"Build*"},
+			expected:         commitstatus.CommitStatusPending,
+		},
+		{
+			commitStatuses: []*git_model.CommitStatus{
+				{Context: "Build", State: commitstatus.CommitStatusFailure},
+				{Context: "Build skipped", State: commitstatus.CommitStatusSkipped},
+			},
+			requiredContexts: []string{"Build*"},
+			expected:         commitstatus.CommitStatusFailure,
+		},
+		{
+			commitStatuses: []*git_model.CommitStatus{
+				{Context: "Build", State: commitstatus.CommitStatusSuccess},
+				{Context: "Optional", State: commitstatus.CommitStatusSkipped},
+			},
+			requiredContexts: []string{"Build"},
+			expected:         commitstatus.CommitStatusSuccess,
+		},
+		{
+			commitStatuses: []*git_model.CommitStatus{
+				{Context: "Build", State: commitstatus.CommitStatusSuccess},
+				{Context: "literal[", State: commitstatus.CommitStatusSkipped},
+			},
+			requiredContexts: []string{"Build", "literal["},
+			expected:         commitstatus.CommitStatusPending,
+		},
+		{
+			commitStatuses: []*git_model.CommitStatus{
+				{Context: "Build", State: commitstatus.CommitStatusSuccess},
+				{Context: "literal[", State: commitstatus.CommitStatusSuccess},
+			},
+			requiredContexts: []string{"Build", "literal["},
 			expected:         commitstatus.CommitStatusSuccess,
 		},
 		{
